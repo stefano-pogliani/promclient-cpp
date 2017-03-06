@@ -1,13 +1,13 @@
 PromClient
 ==========
-A lightwaight, dependency free, Prometheous client for C++11.
+A lightwaight, dependency free, Prometheous client for C++14.
 
 
 Features
 --------
 Prometheous already has a C++ client so why write another one?
 
-  * Standard C++11 code.
+  * Standard C++14 code.
   * No required dependencies for core features.
   * Features that require dependencies can be disabled.
   * Built with `make` to be usable in all projects.
