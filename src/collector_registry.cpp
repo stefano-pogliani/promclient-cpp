@@ -7,71 +7,143 @@
 
 using promclient::CollectorRef;
 using promclient::CollectorRegistry;
+using promclient::DescriptorsList;
+
+using promclient::InvalidCollectionStrategy;
 using promclient::InvalidCollector;
 
+using promclient::DescriptorRef;
+using promclient::Metric;
+using promclient::MetricsList;
+using promclient::Sample;
 
-std::string join(std::set<std::string> values, std::string sep) {
-  std::string result = "";
-  std::set<std::string>::iterator it;
-  for (it = values.begin(); it != values.end(); it++) {
-    if (it != values.begin()) {
-      result += sep;
-    }
-    result += *it;
+
+CollectorRegistry default_registry_;
+bool default_registry_inited_ = false;
+
+
+CollectorRegistry& CollectorRegistry::Default() {
+  if (!default_registry_inited_) {
+    default_registry_inited_ = true;
+    // TODO(stefano): register default collectors.
   }
-  return result;
+  return default_registry_;
 }
 
 
-void CollectorRegistry::Register(CollectorRef collector) {
-  std::vector<Descriptor> descriptors = collector->Describe();
-  std::vector<Descriptor>::iterator desc;
+MetricsList CollectorRegistry::collect(
+    CollectorRegistry::CollectStrategy strategy
+) {
+  switch (strategy) {
+    case CollectorRegistry::CollectStrategy::SORTED:
+      return this->sortedCollect();
 
+    default:
+      throw InvalidCollectionStrategy();
+  }
+}
+
+void CollectorRegistry::registr(CollectorRef collector) {
   // Ensure at least one metric is collected.
+  DescriptorsList descriptors = collector->describe();
   if (descriptors.size() == 0) {
     throw InvalidCollector("Collector does not export any metric.");
   }
 
-  // Lock the registry so we can check the new collector.
+  // Lock the registry so we can check the new collector and
+  // copy global settings for us to check and update them.
   std::lock_guard<std::mutex> lock(this->mutex_);
+  std::map<std::string, std::size_t> metrics_hash = this->metrics_hash_;
 
-  // Copy global settings for us to check and update them.
-  std::map<std::string, std::set<std::string>> metrics_labels;
-  std::map<std::string, std::string> metrics_type;
-  metrics_labels = this->metrics_labels_;
-  metrics_type = this->metrics_type_;
-
-  // Validate the metrics exported by the new collector.
-  for (desc = descriptors.begin(); desc != descriptors.end(); desc++) {
+  // Ensure metrics are not exposed with conflicting descriptors.
+  for (auto desc : descriptors) {
     std::string name = desc->name();
-    std::string type = desc->type();
-    std::set<std::string> labels = desc->labels();
-    bool have_metric = metrics_type.find(name) != metrics_type.end();
+    std::size_t hash = desc->hash();
+    bool have_metric = metrics_hash.find(name) != metrics_hash.end();
 
-    // -> Ensure metric names have consistent types.
-    if (have_metric && metrics_type[name] != type) {
+    if (have_metric && metrics_hash[name] != hash) {
       throw InvalidCollector(
-          "Metric " + name + " already declared with type " +
-          metrics_type[name] + " which is not compatible with type " + type
+          "Metric " + name + " already declared with a confliction descriptor"
       );
     }
-    metrics_type[name] = type;
-
-    // -> Ensure metrics have consistent labels.
-    if (have_metric && metrics_labels[name] != labels) {
-      std::string new_labels = join(labels, ", ");
-      std::string old_labels = join(metrics_labels[name], ", ");
-      throw InvalidCollector(
-          "Metric " + name + " already declared with labels " +
-          old_labels + " which is not compatible with labels " +
-          new_labels
-      );
-    }
-    metrics_labels[name] = labels;
+    metrics_hash[name] = hash;
   }
 
   // Update internal state and add the collector to the registry.
-  this->metrics_labels_ = metrics_labels;
-  this->metrics_type_ = metrics_type;
+  this->metrics_hash_ = metrics_hash;
   this->collectors_.push_back(collector);
+}
+
+bool CollectorRegistry::unregister(CollectorRef collector) {
+  // Lock the registry so we can remove the collector.
+  std::lock_guard<std::mutex> lock(this->mutex_);
+  std::vector<CollectorRef>::iterator it;
+
+  // Remove the collector but keep the descriptors.
+  // If a collector for the metric name is added again,
+  // it is good that we can ensure the metric is the same.
+  std::vector<std::vector<CollectorRef>::iterator> to_remove;
+  for (it = this->collectors_.begin(); it != this->collectors_.end(); it++) {
+    if (it->get() == collector.get()) {
+      to_remove.push_back(it);
+    }
+  }
+  for (auto it : to_remove) {
+    this->collectors_.erase(it);
+  }
+  return to_remove.size() != 0;
+}
+
+
+/*** SORTED STRATEGY ***/
+struct SortedMetricRecord {
+  DescriptorRef descriptor;
+  std::set<Sample, Sample::Compare> samples;
+};
+
+
+MetricsList CollectorRegistry::sortedCollect() {
+  std::vector<CollectorRef> collectors;
+  std::map<std::string, SortedMetricRecord> metrics_by_name;
+
+  // Scoped access to the collectors list to copy it so we can
+  // unlock the regisrty while collection is performed.
+  {
+    std::lock_guard<std::mutex> lock(this->mutex_);
+    collectors = this->collectors_;
+  }
+
+  // Collect all metrics and index by name.
+  // The map will sort metrics by name of us.
+  for (CollectorRef collector : collectors) {
+    MetricsList metrics = collector->collect();
+    for (Metric metric : metrics) {
+      DescriptorRef desc = metric.descriptor();
+      std::string name = desc->name();
+
+      // Index the metric.
+      if (metrics_by_name.find(name) == metrics_by_name.end()) {
+        SortedMetricRecord record;
+        record.descriptor = desc;
+        metrics_by_name[name] = record;
+      }
+
+      // Add the samples.
+      for (Sample sample : metric.samples()) {
+        metrics_by_name[name].samples.insert(sample);
+      }
+    }
+  }
+
+  // Iterate over the "indexed" metrics and return them.
+  MetricsList metrics;
+  for (auto pair : metrics_by_name) {
+    std::vector<Sample> samples(
+        pair.second.samples.begin(),
+        pair.second.samples.end()
+    );
+    Metric metric(pair.second.descriptor, samples);
+    metrics.push_back(metric);
+  }
+  return metrics;
 }

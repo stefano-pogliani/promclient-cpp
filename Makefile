@@ -5,7 +5,7 @@
 DEBUG_FLAGS ?= -DDEBUG -ggdb
 
 # Configuration variables.
-COMPILE_FLAGS = -c -std=c++14 -Wall
+COMPILE_FLAGS = -c -std=c++11 -Wall
 GTEST_PATH = googletest/googletest
 LINK_FLAGS =
 
@@ -16,18 +16,25 @@ LIBS =
 # Tests related variables and targers.
 TEST_INCLUDES = $(INCLUDES) -I$(GTEST_PATH)/include
 TEST_LIBS = $(LIBS) -lpthread
-TEST_OPTS =
+TEST_OPTS ?=
 
 # Library objects to build.
 SRC_OBJS = 
-SRC_OBJS += src/collector_registry.o
+SRC_OBJS += src/internal/text_formatter.o
+SRC_OBJS += src/internal/utils.o
 SRC_OBJS += src/collector.o
+SRC_OBJS += src/collector_registry.o
+SRC_OBJS += src/counter.o
 SRC_OBJS += src/exceptions.o
 SRC_OBJS += src/metric.o
 
 # Test objects to build.
 TEST_OBJS =
+TEST_OBJS += tests/internal/builder.o
+TEST_OBJS += tests/internal/text_formatter.o
+TEST_OBJS += tests/collector.o
 TEST_OBJS += tests/collector_registry.o
+TEST_OBJS += tests/counter.o
 
 
 # Compile C++ files to Objects.

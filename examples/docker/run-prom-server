@@ -1,0 +1,9 @@
+#!/bin/bash
+# Run from the `examples/` directory.
+
+docker run \
+  --rm \
+  --network host \
+  --tty --interactive \
+  --volume "$PWD/docker/prometheus.yaml:/etc/prometheus/prometheus.yml" \
+  prom/prometheus
