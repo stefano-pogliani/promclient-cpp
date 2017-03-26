@@ -1,4 +1,6 @@
 *.o
 *.swp
 
+features/*.check
+features/build/*
 out/

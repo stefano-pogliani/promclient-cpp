@@ -20,7 +20,7 @@ TODO
 - Base elements: metric, collectors and registers.
 - Counters.
 - TODO: Gauges.
-- TODO: HTTP server exporter.
+- HTTP server exporter.
 - Labelled metrics.
 - Metric and label validation.
 - TODO: Quick start.

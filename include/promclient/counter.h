@@ -13,9 +13,6 @@ namespace promclient {
 
   //! Simple ever-increasing counter.
   class Counter : public Collector {
-   //public:
-   // static promclient::initial::CounterBuilder Build();
-
    public:
     Counter(std::string name, std::string help, double initial = 0);
 

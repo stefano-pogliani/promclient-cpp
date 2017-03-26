@@ -68,7 +68,7 @@ namespace internal {
   std::shared_ptr<Collector>
   SimpleLabelledBuilder<Collector>::registr(CollectorRegistry* registry) {
     if (!registry) {
-      registry = &CollectorRegistry::Default();
+      registry = CollectorRegistry::Default();
     }
     std::shared_ptr<Collector> collector = this->build();
     registry->registr(collector);
@@ -130,7 +130,7 @@ namespace internal {
   std::shared_ptr<Collector>
   SimpleBuilder<Collector, Labelled>::registr(CollectorRegistry* registry) {
     if (!registry) {
-      registry = &CollectorRegistry::Default();
+      registry = CollectorRegistry::Default();
     }
     std::shared_ptr<Collector> collector = this->build();
     registry->registr(collector);

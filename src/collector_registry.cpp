@@ -18,16 +18,15 @@ using promclient::MetricsList;
 using promclient::Sample;
 
 
-CollectorRegistry default_registry_;
-bool default_registry_inited_ = false;
+std::shared_ptr<CollectorRegistry> default_registry_;
 
 
-CollectorRegistry& CollectorRegistry::Default() {
-  if (!default_registry_inited_) {
-    default_registry_inited_ = true;
+CollectorRegistry* CollectorRegistry::Default() {
+  if (!default_registry_) {
+    default_registry_ = std::make_shared<CollectorRegistry>();
     // TODO(stefano): register default collectors.
   }
-  return default_registry_;
+  return default_registry_.get();
 }
 
 

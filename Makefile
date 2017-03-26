@@ -37,6 +37,13 @@ TEST_OBJS += tests/collector_registry.o
 TEST_OBJS += tests/counter.o
 
 
+# Include files that provide extra features.
+BUIILD_DEPS =
+EXAMPLE_DEPS =
+FEAT_CHECKS =
+include features/*.makefile
+
+
 # Compile C++ files to Objects.
 %.o: %.cpp
 	g++ $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(INCLUDES) $< -o $@
@@ -60,14 +67,21 @@ out/:
 out/libpromclient.a: $(SRC_OBJS)
 	ar -rv out/libpromclient.a $^
 
+out/tests: out/gtest-all.o out/gtest_main.o $(TEST_OBJS) $(SRC_OBJS)
+	g++ $(LINK_FLAGS) $(TEST_LIBS) -o $@ $^
+
 
 # Entry points.
-build: out/ out/libpromclient.a
+build: out/ out/libpromclient.a $(BUIILD_DEPS)
 
 clean:
 	rm -rf out/
+	rm -rf features/build
 	find . -name '*.o' -print -delete
+	find features/ -name '*.check' -print -delete
 
-test: out/gtest-all.o out/gtest_main.o $(TEST_OBJS) $(SRC_OBJS)
-	g++ $(LINK_FLAGS) $(TEST_LIBS) -o out/tests $^
+example: out/ $(EXAMPLE_DEPS)
+	@echo 'All examples built!'
+
+test: $(FEAT_CHECKS) out/tests
 	out/tests $(TEST_OPTS)

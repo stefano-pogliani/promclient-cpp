@@ -15,7 +15,7 @@ namespace promclient {
   class CollectorRegistry {
    public:
     //! Returns the default registry.
-    static CollectorRegistry& Default();
+    static CollectorRegistry* Default();
 
     enum CollectStrategy {
       SORTED = 0

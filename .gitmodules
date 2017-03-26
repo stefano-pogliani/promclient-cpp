@@ -1,3 +1,6 @@
 [submodule "googletest"]
 	path = googletest
 	url = https://github.com/google/googletest.git
+[submodule "features/onion"]
+	path = features/onion
+	url = https://github.com/davidmoreno/onion.git

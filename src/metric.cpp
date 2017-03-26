@@ -24,11 +24,6 @@ using promclient::Sample;
 using promclient::internal::CombineHashes;
 
 
-// Regular expressions to perform validation.
-std::regex METRIC_LABEL_RE("[a-zA-Z_][a-zA-Z0-9_]*");
-std::regex METRIC_NAME_RE("[a-zA-Z_:][a-zA-Z0-9_:]*");
-
-
 Descriptor::Descriptor(
     std::string name, std::string type,
     std::string help, std::set<std::string> labels
@@ -81,6 +76,8 @@ void Metric::ValidateLabel(std::string label_name) {
   ) {
     throw InvalidMetricLabel(label_name);
   }
+
+  std::regex METRIC_LABEL_RE("[a-zA-Z_][a-zA-Z0-9_]*");
   if (!std::regex_match(label_name, METRIC_LABEL_RE)) {
     throw InvalidMetricLabel(label_name);
   }
@@ -89,6 +86,7 @@ void Metric::ValidateLabel(std::string label_name) {
 void Metric::ValidateName(std::string name) {
   // Metrics are validated to match the specification at:
   // https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
+  std::regex METRIC_NAME_RE("[a-zA-Z_:][a-zA-Z0-9_:]*");
   if (!std::regex_match(name, METRIC_NAME_RE)) {
     throw InvalidMetricName(name);
   }
