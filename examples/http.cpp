@@ -5,9 +5,15 @@
 #include "promclient/features/http.h"
 
 
+using promclient::GaugeRef;
 using promclient::LabelledCounterRef;
 using promclient::features::HttpExporter;
 
+
+GaugeRef example_gauge = promclient::GaugeBuilder()
+  .name("example_gauge")
+  .help("Constant gauge value")
+  .registr();
 
 LabelledCounterRef example_counter = promclient::CounterBuilder()
   .name("example_counter")
@@ -21,6 +27,7 @@ int main(int argc, char **argv) {
   server.mount();
 
   example_counter->labels({{"example", "http"}})->inc(22);
+  example_gauge->set(42);
 
   std::cout << "Server listening at " << server.endpoint() << std::endl;
   server.listen();

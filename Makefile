@@ -26,6 +26,7 @@ SRC_OBJS += src/collector.o
 SRC_OBJS += src/collector_registry.o
 SRC_OBJS += src/counter.o
 SRC_OBJS += src/exceptions.o
+SRC_OBJS += src/gauge.o
 SRC_OBJS += src/metric.o
 
 # Test objects to build.
@@ -35,6 +36,7 @@ TEST_OBJS += tests/internal/text_formatter.o
 TEST_OBJS += tests/collector.o
 TEST_OBJS += tests/collector_registry.o
 TEST_OBJS += tests/counter.o
+TEST_OBJS += tests/gauge.o
 
 
 # Include files that provide extra features.

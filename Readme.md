@@ -46,4 +46,48 @@ as optional to avoid the extra dependency on LibOnion.
 
 Usage
 -----
-?
+PromClient is a static library that should be integrated in
+other applications/libraries to provide insight to users and
+administrators of the final library.
+
+Add metrics to you code, typically as file level variables:
+```c++
+#include <promclient/promclien.h>
+
+using promclient::CounterRef;
+using promclient::LabelledCounterRef;
+
+CounterRef total_requests = promclient::CounterBuilder()
+  .name("total_requests")
+  .help("Total number of requests served by the application")
+  .registr();  // Note the missing `e` (because register is a keyword).
+
+LabelledCounterRef handled_events = promclient::CounterBuilder()
+  .name("handled_events")
+  .help("Number of events handled by type")
+  .labels({"event", "user"})
+  .registr();
+
+
+// Manipulate the metrics in your methods.
+void handle_request_type_a(std::string user, ...) {
+  total_requests->inc();
+  handled_events->labels({
+    {"event", "a"},
+    {"user", user}
+  })->inc();
+}
+
+// Your program needs to export the metrics.
+// An HttpExporter is optionally provided to run an HTTP server
+// that exports the metrics at /metrics
+```
+
+Compile the library and link it with your program:
+```bash
+make clean  # optional
+make build
+
+g++ --std=c++11 -I<promclient/root/dir/inclide> -o your_app \
+  ... promclient/root/dir/out/libpromclient.a
+```
