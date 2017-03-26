@@ -4,6 +4,7 @@
 
 #include <string>
 
+#include "promclient/collector_registry.h"
 #include "promclient/metric.h"
 
 
@@ -21,6 +22,24 @@ namespace internal {
 
     //! Format a metric sample.
     std::string sample(std::string name, Sample sample);
+  };
+
+
+  //! Abstract class to share TextFormatter code.
+  class TextFormatBridge {
+   public:
+    explicit TextFormatBridge(CollectorRegistry* registry);
+
+    //! Collect metrics form the register and calls write for each metric.
+    void collect();
+
+   protected:
+    TextFormatter formatter;
+    CollectorRegistry* registry_;
+    CollectorRegistry::CollectStrategy strategy_;
+
+    //! Writes a formatted line.
+    virtual void write(std::string line) = 0;
   };
 
 }  // namespace internal

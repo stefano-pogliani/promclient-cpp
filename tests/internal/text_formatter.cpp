@@ -1,15 +1,21 @@
 // Copyright 2017 Stefano Pogliani <stefano@spogliani.net>
 #include <gtest/gtest.h>
 
+#include "promclient/collector_registry.h"
+#include "promclient/counter.h"
 #include "promclient/metric.h"
 
+#include "promclient/internal/builder_counter.h"
 #include "promclient/internal/text_formatter.h"
 
 
+using promclient::CollectorRegistry;
+using promclient::CounterRef;
 using promclient::Descriptor;
 using promclient::DescriptorRef;
 using promclient::Sample;
 
+using promclient::internal::TextFormatBridge;
 using promclient::internal::TextFormatter;
 
 
@@ -143,4 +149,58 @@ TEST_F(TextFormatterTest, WriteValueDecimal) {
   std::string expected = "metric_name 1.8559273536698326e+10\n";
   std::string line = this->formatter.sample("metric_name", sample);
   ASSERT_EQ(expected, line);
+}
+
+
+class TestBridge : public TextFormatBridge {
+ public:
+  TestBridge(CollectorRegistry* registry) : TextFormatBridge(registry) {
+    // Noop.
+  }
+
+  std::string buffer() {
+    return this->buffer_;
+  }
+
+ protected:
+  std::string buffer_;
+
+  void write(std::string line) {
+    this->buffer_ += line;
+  }
+};
+
+class TextFormatBridgeTest : public ::testing::Test {
+ public:
+  TextFormatBridgeTest() : registry_(), bridge_(&registry_) {
+    // Noop.
+  }
+
+ protected:
+  CollectorRegistry registry_;
+  TestBridge bridge_;
+
+  std::string collectBuffer() {
+    this->bridge_.collect();
+    return this->bridge_.buffer();
+  }
+};
+
+TEST_F(TextFormatBridgeTest, NoWritesAreIssuedWithoutMetrics) {
+  std::string actual = this->collectBuffer();
+  ASSERT_EQ("", actual);
+}
+
+TEST_F(TextFormatBridgeTest, WritesCounter) {
+  CounterRef counter = promclient::CounterBuilder()
+    .name("test_metric")
+    .help("used for tests")
+    .registr(&this->registry_);
+
+  std::string actual = this->collectBuffer();
+  std::string expected;
+  expected += "# HELP test_metric used for tests\n";
+  expected += "# TYPE test_metric counter\n";
+  expected += "test_metric 0.0000000000000000e+00\n";
+  ASSERT_EQ(expected, actual);
 }

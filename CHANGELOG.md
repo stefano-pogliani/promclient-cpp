@@ -16,6 +16,12 @@ TODO
 - PushGateway exporter.
 - Replace use of mutex with atomic where possible.
 
+0.1.1
+-----
+- Add MIT license text
+- Add `TextFormatBridge` to semplify text exporters.
+- Example of a custom exporter.
+
 0.1.0
 -----
 - Base elements: metric, collectors and registers.

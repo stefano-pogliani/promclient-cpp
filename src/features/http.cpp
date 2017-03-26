@@ -13,8 +13,33 @@ using promclient::CollectorRegistry;
 using promclient::MetricsList;
 using promclient::Sample;
 
-using promclient::internal::TextFormatter;
 using promclient::features::HttpExporter;
+using promclient::internal::TextFormatBridge;
+
+
+//! Write lines to an onion response.
+class OnionTextBridge : public TextFormatBridge {
+ public:
+  OnionTextBridge(
+      CollectorRegistry* registry, onion_response* response
+  ) : TextFormatBridge(registry) {
+    this->response_ = response;
+  }
+
+  void setContentType() {
+    onion_response_set_header(
+        this->response_, "Content-Type",
+        "text/plain; version=0.0.4"
+    );
+  }
+
+ protected:
+  onion_response* response_;
+
+  void write(std::string line) {
+    onion_response_write0(this->response_, line.c_str());
+  }
+};
 
 
 HttpExporter::HttpExporter(
@@ -26,8 +51,6 @@ HttpExporter::HttpExporter(
   this->port_  = port;
 
   this->registry_ = registry;
-  this->strategy_ = CollectorRegistry::CollectStrategy::SORTED;
-
   if (this->registry_ == nullptr) {
     this->registry_ = CollectorRegistry::Default();
   }
@@ -90,27 +113,11 @@ onion_connection_status HttpExporter::CallMetrics(
 }
 
 
-#include <iostream>
 onion_connection_status HttpExporter::metrics(
     onion_request* request, onion_response* response
 ) {
-  TextFormatter formatter;
-  MetricsList metrics = this->registry_->collect(this->strategy_);
-  onion_response_set_header(
-      response, "Content-Type",
-      "text/plain; version=0.0.4"
-  );
-
-  for (auto metric : metrics) {
-    DescriptorRef descriptor = metric.descriptor();
-    std::string desc = formatter.describe(descriptor);
-    std::string name = descriptor->name();
-    onion_response_write0(response, desc.c_str());
-
-    for (Sample sample : metric.samples()) {
-      std::string line = formatter.sample(name, sample);
-      onion_response_write0(response, line.c_str());
-    }
-  }
+  OnionTextBridge bridge(this->registry_, response);
+  bridge.setContentType();
+  bridge.collect();
   return OCS_PROCESSED;
 }

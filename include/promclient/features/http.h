@@ -43,9 +43,7 @@ namespace features {
     std::string port_;
 
     onion* onion_;
-
     CollectorRegistry* registry_;
-    CollectorRegistry::CollectStrategy strategy_;
 
     //! Handles requests to /metrics
     onion_connection_status metrics(

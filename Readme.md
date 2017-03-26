@@ -91,3 +91,54 @@ make build
 g++ --std=c++11 -I<promclient/root/dir/inclide> -o your_app \
   ... promclient/root/dir/out/libpromclient.a
 ```
+
+### Custom Exporters
+While collecting metrics for your application/library is
+essential, it is only useful if these metrics can be accessed.
+
+PromClient (optionally) provides a simple HTTP exporter that
+can be used to quickly access metrics.
+
+If your project ...
+
+  * Add depenencies to libonion
+  * Already has an HTTP server
+  * Does not (and does not want to) use threads
+
+... you will want another way to export those metrics.
+To do so you can extend the `TextFormatBridge` to write lines
+the way you want to where you want!
+
+```c++
+#include <iostream>
+
+#include <promclient/collector_registry.h>
+#include <promclient/internal/text_formatter.h>
+
+using promclient::CollectorRegistry;
+using promclient::internal::TextFormatBridge;
+
+
+class StdOutBridge : public TextFormatBridge {
+ public:
+  CustomBridge(CollectorRegistry* registry)
+    : TextFormatBridge(registry) {
+    // Noop.
+  }
+
+ protected:
+  void write(std::string line) {
+    std::cout << line;
+  }
+};
+
+
+int main() {
+  // Your code
+  // ...
+
+  // Dump metrics to stdout.
+  StdOutBridge bridge(CollectorRegistry::Default());
+  bridge.collect();
+}
+```

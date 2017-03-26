@@ -28,4 +28,4 @@ scrape_configs:
 
   - job_name: 'promclient_examples'
     static_configs:
-      - targets: ['localhost:9234']
+      - targets: ['localhost:9200']

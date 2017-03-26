@@ -5,17 +5,42 @@
 #include <regex>
 #include <sstream>
 
+#include "promclient/collector_registry.h"
 #include "promclient/metric.h"
 
 
+using promclient::CollectorRegistry;
 using promclient::DescriptorRef;
 using promclient::Sample;
+
+using promclient::internal::TextFormatBridge;
 using promclient::internal::TextFormatter;
 
 
 std::regex NEW_LINE_RE = std::regex("\n");
 std::regex QUOTE_RE = std::regex("\"");
 std::regex SLASH_RE = std::regex("\\\\");
+
+
+TextFormatBridge::TextFormatBridge(CollectorRegistry* registry) {
+  this->registry_ = registry;
+  this->strategy_ = CollectorRegistry::CollectStrategy::SORTED;
+}
+
+void TextFormatBridge::collect() {
+  MetricsList metrics = this->registry_->collect(this->strategy_);
+  for (auto metric : metrics) {
+    DescriptorRef descriptor = metric.descriptor();
+    std::string desc = formatter.describe(descriptor);
+    std::string name = descriptor->name();
+    this->write(desc);
+
+    for (Sample sample : metric.samples()) {
+      std::string line = formatter.sample(name, sample);
+      this->write(line);
+    }
+  }
+}
 
 
 std::string TextFormatter::describe(DescriptorRef descriptor) {
