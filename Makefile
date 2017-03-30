@@ -1,16 +1,20 @@
 .PHONY: build clean test
 .DEFAULT_GOAL := build
 
-#DEBUG_FLAGS ?=
-DEBUG_FLAGS ?= -DDEBUG -ggdb
-
 # Configuration variables.
+CROSS_COMPILE ?=
+AR  = $(CROSS_COMPILE)ar
+GPP = $(CROSS_COMPILE)g++
+
 COMPILE_FLAGS = -c -std=c++11 -Wall
 GTEST_PATH = googletest/googletest
 LINK_FLAGS =
 
 INCLUDES = -Iinclude/
 LIBS =
+
+DEBUG_FLAGS ?=
+#DEBUG_FLAGS ?= -DDEBUG -ggdb
 
 
 # Tests related variables and targers.
@@ -48,17 +52,17 @@ include features/*.makefile
 
 # Compile C++ files to Objects.
 %.o: %.cpp
-	g++ $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(INCLUDES) $< -o $@
+	$(GPP) $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(INCLUDES) $< -o $@
 
 tests/%.o: tests/%.cpp
-	g++ $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(TEST_INCLUDES) $< -o $@
+	$(GPP) $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(TEST_INCLUDES) $< -o $@
 
 out/gtest-all.o: out/ $(GTEST_PATH)/src/gtest-all.cc
-	g++ $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(TEST_INCLUDES) \
+	$(GPP) $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(TEST_INCLUDES) \
 		-I$(GTEST_PATH) $(GTEST_PATH)/src/gtest-all.cc -o $@
 
 out/gtest_main.o: out/ $(GTEST_PATH)/src/gtest_main.cc
-	g++ $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(TEST_INCLUDES) \
+	$(GPP) $(COMPILE_FLAGS) $(DEBUG_FLAGS) $(TEST_INCLUDES) \
 		-I$(GTEST_PATH) $(GTEST_PATH)/src/gtest_main.cc -o $@
 
 
@@ -67,10 +71,10 @@ out/:
 	mkdir -p out/
 
 out/libpromclient.a: $(SRC_OBJS)
-	ar -rv out/libpromclient.a $^
+	$(AR) -rv out/libpromclient.a $^
 
 out/tests: out/gtest-all.o out/gtest_main.o $(TEST_OBJS) $(SRC_OBJS)
-	g++ $(LINK_FLAGS) $(TEST_LIBS) -o $@ $^
+	$(GPP) $(LINK_FLAGS) $(TEST_LIBS) -o $@ $^
 
 
 # Entry points.

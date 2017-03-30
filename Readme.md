@@ -10,7 +10,7 @@ Prometheous already has a C++ client so why write another one?
   * Standard C++11 code.
   * No required dependencies for core features.
   * Features that require dependencies are disabled by default.
-  * Built with `make` to be usable in all projects.
+  * Built with `make` to be easily usable in all projects.
 
 Aside for the differnece with other libraries, PromClient features include:
 
@@ -142,3 +142,41 @@ int main() {
   bridge.collect();
 }
 ```
+
+
+Cross-Compiling the library
+---------------------------
+If your project targets embedded or low performance devices
+(like the RaspberryPi) compiling everything on the device
+itself is very slow and inconvenient.
+
+Cross compilation is a technique used to compile code on a
+faster system (i.e, PC) with a compiler that will generate
+code for a target (i.e, RaspberryPi) architecture.
+
+PromClient supports cross compiling (since version 0.1.2)
+the the `CROSS_COMPILE` `make` variable.
+This is used as a prefix to tools in the toolchain and can
+be either a full path or a prefix if the toolchain is in `PATH`.
+
+Example:
+```bash
+make clean
+make build CROSS_COMPILE=armv7-rpi3-linux-gnueabihf-
+```
+
+If `FEAT_HTTP` is enabled you will also need to provide a
+`cmake` cross-compile file to use.
+See https://cmake.org/Wiki/CMake_Cross_Compiling and Google.
+
+```bash
+make clean
+make build \
+    CROSS_COMPILE=armv7-rpi3-linux-gnueabihf- \
+    CMAKE_TOOLCHAIN_FILE=/opt/crosstools/armv7-rpi3-linux-gnueabihf.cmake \
+    FEAT_HTTP=1
+```
+
+If cross-compiling for RaspberryPi checkout
+https://github.com/stefano-pogliani/crossarm
+for a set of docker images with re-build toolchains.

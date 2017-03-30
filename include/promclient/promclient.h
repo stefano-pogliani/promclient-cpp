@@ -2,6 +2,8 @@
 #ifndef PROMCLIENT_PROMCLIENT_H_
 #define PROMCLIENT_PROMCLIENT_H_
 
+#define PROMCLIENT_VERSION "0.1.2"
+
 // This is just an include wrapper to make all needed headers
 // available to library users.
 #include "promclient/counter.h"

@@ -16,6 +16,11 @@ TODO
 - PushGateway exporter.
 - Replace use of mutex with atomic where possible.
 
+0.1.2
+-----
+- Add `PROMCLIENT_VERSION` to `promclient.h`
+- Support cross-compiling with `CROSS_COMPILE=cross-compile-prefix-`.
+
 0.1.1
 -----
 - Add MIT license text
